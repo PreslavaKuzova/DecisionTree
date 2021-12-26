@@ -1,6 +1,11 @@
 package features;
 
-public enum Age {
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public enum Age implements Feature {
     TEEN("10-19"),
     TWENTIES("20-29"),
     THIRTIES("30-39"),
@@ -26,5 +31,15 @@ public enum Age {
         for (Age variable : values())
             if (variable.getAge().equalsIgnoreCase(value)) return variable;
         return UNKNOWN;
+    }
+
+    @Override
+    public double calculateEntropy(List<BreastCancerData> data) {
+        Map<Age, Long> occurrences = data.stream()
+                .map(BreastCancerData::getAge)
+                .filter(it -> it != Age.UNKNOWN)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        return calculateEntropy(occurrences, data.size(), Age.values().length - 1);
     }
 }

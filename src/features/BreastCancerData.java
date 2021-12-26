@@ -1,4 +1,4 @@
-import features.*;
+package features;
 
 public class BreastCancerData {
     private final Classification classification;
@@ -7,7 +7,7 @@ public class BreastCancerData {
     private final String tumorSize;
     private final String invNodes;
     private final NodeCaps nodeCaps;
-    private final int degMalig;
+    private final DegMalig degMalig;
     private final Breast breast;
     private final BreastQuadrant quadrant;
     private final Irradiat irradiat;
@@ -19,7 +19,7 @@ public class BreastCancerData {
         this.tumorSize = values[3];
         this.invNodes = values[4];
         this.nodeCaps = NodeCaps.getNodeCaps(values[5]);
-        this.degMalig = Integer.parseInt(values[6]);
+        this.degMalig = DegMalig.getValue(Integer.parseInt(values[6]));
         this.breast = Breast.getBreast(values[7]);
         this.quadrant = BreastQuadrant.getQuadrant(values[8]);
         this.irradiat = Irradiat.getIrradiat(values[9]);
@@ -49,7 +49,7 @@ public class BreastCancerData {
         return nodeCaps;
     }
 
-    public int getDegMalig() {
+    public DegMalig getDegMalig() {
         return degMalig;
     }
 
@@ -67,7 +67,7 @@ public class BreastCancerData {
 
     @Override
     public String toString() {
-        return "BreastCancerData{" +
+        return "features.BreastCancerData{" +
                 "classification=" + classification +
                 ", age=" + age +
                 ", menopause=" + menopause +
