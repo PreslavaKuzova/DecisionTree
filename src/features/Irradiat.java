@@ -2,10 +2,9 @@ package features;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public enum Irradiat implements Feature {
+public enum Irradiat implements Feature<Irradiat> {
     YES("yes"),
     NO("no"),
     UNKNOWN("");
@@ -27,12 +26,9 @@ public enum Irradiat implements Feature {
     }
 
     @Override
-    public double calculateEntropy(List<BreastCancerData> data) {
-        Map<Irradiat, Long> occurrences = data.stream()
-                .map(BreastCancerData::getIrradiat)
-                .filter(it -> it != Irradiat.UNKNOWN)
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-
-        return calculateEntropy(occurrences, data.size(), Irradiat.values().length - 1);
+    public Map<Irradiat, List<BreastCancerData>> getOccurrenceMap(List<BreastCancerData> data) {
+        return data.stream()
+                .filter(it -> it.getIrradiat() != Irradiat.UNKNOWN)
+                .collect(Collectors.groupingBy(BreastCancerData::getIrradiat));
     }
 }

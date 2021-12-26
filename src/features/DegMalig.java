@@ -2,10 +2,9 @@ package features;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public enum DegMalig implements Feature {
+public enum DegMalig implements Feature<DegMalig> {
     ONE(1),
     TWO(2),
     THREE(3),
@@ -28,12 +27,10 @@ public enum DegMalig implements Feature {
     }
 
     @Override
-    public double calculateEntropy(List<BreastCancerData> data) {
-        Map<DegMalig, Long> occurrences = data.stream()
-                .map(BreastCancerData::getDegMalig)
-                .filter(it -> it != DegMalig.UNKNOWN)
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-
-        return calculateEntropy(occurrences, data.size(), DegMalig.values().length - 1);
+    public Map<DegMalig, List<BreastCancerData>> getOccurrenceMap(List<BreastCancerData> data) {
+        return data.stream()
+                .filter(it -> it.getDegMalig() != DegMalig.UNKNOWN)
+                .collect(Collectors.groupingBy(BreastCancerData::getDegMalig));
     }
+
 }

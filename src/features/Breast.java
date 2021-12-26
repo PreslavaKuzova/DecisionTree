@@ -2,10 +2,9 @@ package features;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public enum Breast implements Feature {
+public enum Breast implements Feature<Breast> {
     LEFT("left"),
     RIGHT("right"),
     UNKNOWN("");
@@ -27,12 +26,9 @@ public enum Breast implements Feature {
     }
 
     @Override
-    public double calculateEntropy(List<BreastCancerData> data) {
-        Map<Breast, Long> occurrences = data.stream()
-                .map(BreastCancerData::getBreast)
-                .filter(it -> it != Breast.UNKNOWN)
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-
-        return calculateEntropy(occurrences, data.size(), Breast.values().length - 1);
+    public Map<Breast, List<BreastCancerData>> getOccurrenceMap(List<BreastCancerData> data) {
+        return data.stream()
+                .filter(it -> it.getBreast() != Breast.UNKNOWN)
+                .collect(Collectors.groupingBy(BreastCancerData::getBreast));
     }
 }
