@@ -1,8 +1,23 @@
 package features;
 
-import java.util.List;
-import java.util.Map;
+public enum Feature {
+    AGE(0),
+    MENOPAUSE(1),
+    TUMOR_SIZE(2),
+    INV_NODES(3),
+    NODE_CAPS(4),
+    DEG_MALIG(5),
+    BREAST(6),
+    BREAST_QUADRANT(7),
+    IRRADIATE(8);
 
-public interface Feature<T> {
-    Map<T, List<BreastCancerData>> getOccurrenceMap(List<BreastCancerData> data);
+    private final int position;
+
+    Feature(int position) {
+        this.position = position;
+    }
+
+    public int getPosition() {
+        return position;
+    }
 }

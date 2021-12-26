@@ -26,9 +26,9 @@ public enum Classification {
         return UNKNOWN;
     }
 
-    /* Entropy is used as a way to measure how “mixed” a column is.
-       Specifically, entropy is used to measure disorder.
-       We calculate the entropy of the class variable. */
+    // Entropy is used as a way to measure how “mixed” a column is.
+    // Specifically, entropy is used to measure disorder.
+    // We calculate the entropy of the class variable.
     public static double calculateEntropy(List<BreastCancerData> data) {
         Map<Classification, Long> occurrences = data.stream()
                 .map(BreastCancerData::getClassification)
