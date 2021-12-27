@@ -5,11 +5,71 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Main {
-    public static void main(String[] args) throws FileNotFoundException {
-        List<BreastCancerData> data = FileDevice.read("breast-cancer.data");
+    static final int N_FOLD_CROSS_VALIDATION_VALUE = 10;
 
-        Node root = calculateDecisionTree(data, null, new ArrayList<>());
-        System.out.println(root);
+    static List<BreastCancerData> allBreastCancerData;
+    static List<List<BreastCancerData>> nFoldCrossValidationBreastCancerData = new ArrayList<>();
+
+    public static void main(String[] args) throws FileNotFoundException {
+        allBreastCancerData = FileDevice.read("breast-cancer.data");
+        divideIntoNTestGroups();
+
+        double modelAccuracy = 0.0;
+
+        for (int i = 0; i < N_FOLD_CROSS_VALIDATION_VALUE; i++) {
+            System.out.println("Test No " + (i + 1));
+
+            List<BreastCancerData> currentTestData = extractCurrentTestData(i);
+            Node currentTestSetRoot = calculateDecisionTree(currentTestData, null, new ArrayList<>());
+
+            int correctPredictions = 0;
+            for (BreastCancerData breastCancerData : nFoldCrossValidationBreastCancerData.get(i)) {
+                Classification prediction = assignToClassifier(currentTestSetRoot, breastCancerData);
+                if (prediction == breastCancerData.getClassification()) {
+                    correctPredictions++;
+                }
+            }
+
+            double currentIterationAccuracy = correctPredictions * 1.0 / nFoldCrossValidationBreastCancerData.get(i).size();
+            modelAccuracy += currentIterationAccuracy;
+            System.out.println("Current test accuracy: " + currentIterationAccuracy);
+        }
+
+        System.out.println("Model accuracy: " + modelAccuracy / N_FOLD_CROSS_VALIDATION_VALUE);
+    }
+
+    private static Classification assignToClassifier(Node node, BreastCancerData breastCancerData) {
+        //current test root
+        //go down the decision tree somehow to find the prediction to the given classifier
+        Feature feature;
+        try {
+            feature = Feature.valueOf(node.value);
+        } catch (IllegalArgumentException e) {
+            return Classification.getClassification(node.value);
+        }
+
+        String answer = breastCancerData.getFeatureAtPosition(feature.getPosition());
+
+        Classification classification = Classification.UNKNOWN;
+        for (Node child : node.children) {
+            if (child.answer.equals(answer)) {
+                classification = assignToClassifier(child, breastCancerData);
+            }
+        }
+
+        return classification;
+    }
+
+    private static List<BreastCancerData> extractCurrentTestData(int position) {
+        List<BreastCancerData> currentTestData = new ArrayList<>();
+
+        for (int i = 0; i < nFoldCrossValidationBreastCancerData.size(); i++) {
+            if (i != position) {
+                currentTestData.addAll(nFoldCrossValidationBreastCancerData.get(i));
+            }
+        }
+
+        return currentTestData;
     }
 
     private static Node calculateDecisionTree(
@@ -116,5 +176,15 @@ public class Main {
         }
 
         return Classification.calculateEntropy(data) - sum;
+    }
+
+    //divide into n test groups
+    private static void divideIntoNTestGroups() {
+        int chunk = allBreastCancerData.size() / N_FOLD_CROSS_VALIDATION_VALUE;
+
+        for (int i = 0; i < allBreastCancerData.size(); i += chunk) {
+            nFoldCrossValidationBreastCancerData
+                    .add(allBreastCancerData.subList(i, Math.min(i + chunk, allBreastCancerData.size())));
+        }
     }
 }
