@@ -1,5 +1,3 @@
-package features;
-
 import java.util.List;
 
 public class BreastCancerData {

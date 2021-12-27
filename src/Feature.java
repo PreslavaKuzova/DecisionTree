@@ -1,5 +1,3 @@
-package features;
-
 public enum Feature {
     AGE(0),
     MENOPAUSE(1),

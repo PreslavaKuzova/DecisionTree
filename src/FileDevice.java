@@ -1,5 +1,3 @@
-import features.BreastCancerData;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;

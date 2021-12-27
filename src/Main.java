@@ -1,6 +1,4 @@
 
-import features.*;
-
 import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +11,9 @@ public class Main {
         //If we were to continue we would use recursion to keep splitting
         // each split with a goal to end each branch with an entropy of zero.
         System.out.println(findHighestInformationGainFeature(data));
+
+        //split by the found feature
+        //continue splitting not taking it into account
     }
 
     private static Feature findHighestInformationGainFeature(List<BreastCancerData> data) {
