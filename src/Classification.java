@@ -35,9 +35,10 @@ public enum Classification {
 
         double sum = 0.0;
         for (Long numberOfNodeCapsOccurrence : occurrences.values()) {
-            sum += (numberOfNodeCapsOccurrence * 1.0 / data.size()) *
+            double part = (numberOfNodeCapsOccurrence * 1.0 / data.size()) *
                     (Math.log(numberOfNodeCapsOccurrence * 1.0 / data.size()) /
-                            Math.log(Classification.values().length - 1)); // needed for logb(n) = loge(n) / loge(b)
+                            Math.log(Classification.values().length - 1));
+            sum += part; // needed for logb(n) = loge(n) / loge(b)
         }
         return -sum;
     }

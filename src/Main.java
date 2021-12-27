@@ -1,32 +1,21 @@
 
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) throws FileNotFoundException {
         List<BreastCancerData> data = FileDevice.read("breast-cancer.data");
 
-        //If we were to continue we would use recursion to keep splitting
-        // each split with a goal to end each branch with an entropy of zero.
-//        Feature highest = findHighestInformationGainFeature(data);
-//        Map<String, List<BreastCancerData>> featureGroupedData = getOccurrenceMap(data, highest.getPosition());
-
-
-        Node root = calculateDecisionTree(data, null);
-
-        //calculateDecisionTree(data, featureGroupedData);
-
-        //split by the found feature
-        //continue splitting not taking it into account
+        Node root = calculateDecisionTree(data, null, new ArrayList<>());
+        System.out.println(root);
     }
 
     private static Node calculateDecisionTree(
             List<BreastCancerData> data,
-            String answer
+            String answer,
+            List<Feature> bannedFeatures
     ) {
         if (data.isEmpty()) {
             //leaf that is empty
@@ -43,9 +32,17 @@ public class Main {
             );
         }
 
+        if (bannedFeatures.size() == Feature.values().length) {
+            return new Node(
+                    Classification.UNKNOWN.getClassVariable(),
+                    answer,
+                    Collections.emptyList()
+            );
+        }
+
         //the key is the characteristic value (eg age 20-29, 30-39 etc)
         //the value is subset of the whole list that matches this characteristic
-        Feature bestFeature = findHighestInformationGainFeature(data);
+        Feature bestFeature = findHighestInformationGainFeature(data, bannedFeatures);
         Map<String, List<BreastCancerData>> featureGroupedData =
                 getOccurrenceMap(data, bestFeature.getPosition());
 
@@ -55,21 +52,30 @@ public class Main {
             String subsetAnswer = entry.getKey();
             List<BreastCancerData> subsetFromThatAnswer = entry.getValue();
 
-            //TODO need to remove the current feature aka bestFeature
-            node.children.add(calculateDecisionTree(subsetFromThatAnswer, subsetAnswer));
+            List<Feature> allBannedFeatures = getAllBannedFeatures(bannedFeatures, bestFeature);
+
+            node.children.add(calculateDecisionTree(subsetFromThatAnswer, subsetAnswer, allBannedFeatures));
         }
 
         return node;
+    }
+
+    private static List<Feature> getAllBannedFeatures(List<Feature> bannedFeatures, Feature bestFeature) {
+        List<Feature> allBannedFeatures = new ArrayList<>();
+        allBannedFeatures.add(bestFeature);
+        allBannedFeatures.addAll(bannedFeatures);
+        return allBannedFeatures;
     }
 
     private static boolean doAllElementsHaveSameClass(List<BreastCancerData> subsetFromThatAnswer) {
         return Collections.frequency(subsetFromThatAnswer.stream().map(BreastCancerData::getClassification).toList(), subsetFromThatAnswer.get(0).getClassification()) == subsetFromThatAnswer.size();
     }
 
-    private static Feature findHighestInformationGainFeature(List<BreastCancerData> data) {
+    private static Feature findHighestInformationGainFeature(List<BreastCancerData> data, List<Feature> bannedFeatures) {
         Feature highestInformationGainFeature = null;
         double highestInformationGain = Integer.MIN_VALUE;
-        for (Feature feature : Feature.values()) {
+
+        for (Feature feature : removeBannedFeatures(Arrays.stream(Feature.values()).toList(), bannedFeatures)) {
             double currentInformationGain = calculateInformationGain(data, getOccurrenceMap(data, feature.getPosition()));
             if (currentInformationGain > highestInformationGain) {
                 highestInformationGain = currentInformationGain;
@@ -78,6 +84,19 @@ public class Main {
         }
 
         return highestInformationGainFeature;
+    }
+
+    public static List<Feature> removeBannedFeatures(List<Feature> allFeatures, List<Feature> bannedFeatures) {
+        // Prepare a union
+        List<Feature> union = new ArrayList<>(allFeatures);
+        union.addAll(bannedFeatures);
+        // Prepare an intersection
+        List<Feature> intersection = new ArrayList<>(allFeatures);
+        intersection.retainAll(bannedFeatures);
+        // Subtract the intersection from the union
+        union.removeAll(intersection);
+
+        return union;
     }
 
     public static Map<String, List<BreastCancerData>> getOccurrenceMap(List<BreastCancerData> data, int position) {
@@ -92,8 +111,8 @@ public class Main {
         //split by a feature
         //calculate the entropy of the target column for each subset
         double sum = 0;
-        for (List<BreastCancerData> list : occurrences.values()) {
-            sum += (list.size() * 1.0 / data.size()) * Classification.calculateEntropy(list);
+        for (List<BreastCancerData> sublistOfSpitByFeatureData : occurrences.values()) {
+            sum += (sublistOfSpitByFeatureData.size() * 1.0 / data.size()) * Classification.calculateEntropy(sublistOfSpitByFeatureData);
         }
 
         return Classification.calculateEntropy(data) - sum;

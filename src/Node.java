@@ -1,5 +1,4 @@
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Node {
     public String value; //feature or class
@@ -10,5 +9,14 @@ public class Node {
         this.value = value;
         this.answer = answer;
         this.children = children;
+    }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "value='" + value + '\'' +
+                ", answer='" + answer + '\'' +
+                ", children=" + Arrays.toString(children.toArray()) +
+                '}';
     }
 }
