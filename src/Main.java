@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Main {
-    static final int N_FOLD_CROSS_VALIDATION_VALUE = 10;
+    static final int N_FOLD_CROSS_VALIDATION_VALUE = 15;
 
     static List<BreastCancerData> allBreastCancerData;
     static List<List<BreastCancerData>> nFoldCrossValidationBreastCancerData = new ArrayList<>();
@@ -13,16 +13,25 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException {
         allBreastCancerData = FileDevice.read("breast-cancer.data");
         divideIntoNTestGroups();
+        calculateAccuracy();
+    }
 
+    private static void calculateAccuracy() {
         double modelAccuracy = 0.0;
 
         for (int i = 0; i < N_FOLD_CROSS_VALIDATION_VALUE; i++) {
             System.out.println("Test No " + (i + 1));
 
+            // Only use N - 1 lists of BreastCancerData out of all N
+            // Create a list that holds off the data of these N - 1 lists (train set)
             List<BreastCancerData> currentTestData = extractCurrentTestData(i);
+
+            // For each train set calculate a DecisionTree
             Node currentTestSetRoot = calculateDecisionTree(currentTestData, null, new ArrayList<>());
 
             int correctPredictions = 0;
+
+            // For each value in the test set find nFoldCrossValidationBreastCancerData.get(i)
             for (BreastCancerData breastCancerData : nFoldCrossValidationBreastCancerData.get(i)) {
                 Classification prediction = assignToClassifier(currentTestSetRoot, breastCancerData);
                 if (prediction == breastCancerData.getClassification()) {
@@ -39,19 +48,30 @@ public class Main {
     }
 
     private static Classification assignToClassifier(Node node, BreastCancerData breastCancerData) {
-        //current test root
+        //node is the current value
         //go down the decision tree somehow to find the prediction to the given classifier
+
+        //if the node holds feature value, we haven't reached a leaf that holds information about the class yet
         Feature feature;
         try {
             feature = Feature.valueOf(node.value);
         } catch (IllegalArgumentException e) {
+            // Feature.valueOf(node.value) throws IllegalArgumentException when the enum doesn't contain such value
+            // This means that the node contains not a Feature value but a Classifier value, and we have reached a leaf
+            // Bottom of the recursion
             return Classification.getClassification(node.value);
         }
 
+        // We want to extract the answer that will lead us to the next node
         String answer = breastCancerData.getFeatureAtPosition(feature.getPosition());
 
         Classification classification = Classification.UNKNOWN;
         for (Node child : node.children) {
+            // We find the child that holds this answer
+            // Each node contains:
+            // - Feature (AGE, BREAST, etc.) value
+            // - Answer that lead us to that value (for instance 20-29, 30-29, ... for AGE )
+            // - Children Nodes
             if (child.answer.equals(answer)) {
                 classification = assignToClassifier(child, breastCancerData);
             }
@@ -78,13 +98,13 @@ public class Main {
             List<Feature> bannedFeatures
     ) {
         if (data.isEmpty()) {
-            //leaf that is empty
+            // Leaf that is empty
             throw new IllegalArgumentException();
         }
 
         if (doAllElementsHaveSameClass(data)) {
-            //leaf that holds class value
-            //classification, characteristic that lead us here, no children
+            // Leaf that holds class value
+            // Classification, characteristic that lead us here, no children
             return new Node(
                     data.get(0).getClassification().getClassVariable(),
                     answer,
@@ -100,18 +120,26 @@ public class Main {
             );
         }
 
-        //the key is the characteristic value (eg age 20-29, 30-39 etc)
-        //the value is subset of the whole list that matches this characteristic
+       // Find the feature that has the highest information gain
         Feature bestFeature = findHighestInformationGainFeature(data, bannedFeatures);
+
+        // Split the data into subset for each characteristic value that the bestFeature might have
+        // The key is the characteristic value (eg age 20-29, 30-39 etc)
+        // The value is subset of the whole list that matches this characteristic
         Map<String, List<BreastCancerData>> featureGroupedData =
                 getOccurrenceMap(data, bestFeature.getPosition());
 
+        // The node is NOT a leaf - that means it contains Feature value as a characteristic
+        // The answer is the answer that lead us here
+        // For instance, the parent node is AGE, the value that lead us here is 20-29 so answer will be 20-29
         Node node = new Node(bestFeature.name(), answer, new ArrayList<>());
 
+        // For each value the characteristic has, calculate the following child decision subtree
         for (Map.Entry<String, List<BreastCancerData>> entry : featureGroupedData.entrySet()) {
             String subsetAnswer = entry.getKey();
             List<BreastCancerData> subsetFromThatAnswer = entry.getValue();
 
+            // Banned features are feature we have already split the data by
             List<Feature> allBannedFeatures = getAllBannedFeatures(bannedFeatures, bestFeature);
 
             node.children.add(calculateDecisionTree(subsetFromThatAnswer, subsetAnswer, allBannedFeatures));
@@ -168,8 +196,8 @@ public class Main {
     // If the result is positive, we’ve lowered entropy with our split.
     // The higher the result is, the more we’ve lowered entropy.
     public static <T> double calculateInformationGain(List<BreastCancerData> data, Map<T, List<BreastCancerData>> occurrences) {
-        //split by a feature
-        //calculate the entropy of the target column for each subset
+        // Split by a feature
+        // Calculate the entropy of the target column for each subset
         double sum = 0;
         for (List<BreastCancerData> sublistOfSpitByFeatureData : occurrences.values()) {
             sum += (sublistOfSpitByFeatureData.size() * 1.0 / data.size()) * Classification.calculateEntropy(sublistOfSpitByFeatureData);
